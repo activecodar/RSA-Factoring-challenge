@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+import math
+import argparse
+from typing import List
+from multiprocessing import Process, Manager
+
+
+# def get_factors(n: int) -> List:
+#     factors = []
+#     for num in range(1, int(math.sqrt(n)) + 1):
+#         if len(factors) > 1: # we just want the first two results
+#             break
+#         if n%num == 0:
+#             factors.append((num, n // num))
+#     return factors
+
+def get_factors(n: int, factors: List):
+    for num in range(1, int(math.sqrt(n)) + 1):
+        if len(factors) > 1: # we just want the first two results
+            break
+        if n%num == 0:
+            factors.append((num, n // num))
+
+def parallel_get_factors(n: int) -> List:
+    with Manager() as manager:
+        factors = manager.list()
+        processes = []
+
+        # Divide the input value into smaller chunks
+        chunk_size = int(math.sqrt(n))
+        for i in range(1, n+1, chunk_size):
+            p = Process(target=get_factors, args=(n, factors))
+            processes.append(p)
+            p.start()
+
+        for p in processes:
+            p.join()
+
+        return list(factors)
+# def get_factors(n: int) -> List:
+#     factors = []
+#     i = 2
+#     while i * i <= n:
+#         while n % i == 0:
+#             factors.append(i)
+#             n = n // i
+#         i += 1
+#     if n > 1:
+#         factors.append(n)
+#     return factors
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help='The file to be read')
+    args = parser.parse_args()
+    with open(args.file, 'r') as f:
+        for line in f:
+            factors = parallel_get_factors(int(line))[-1]
+            print(f"{line.strip()}={factors[1]}*{factors[0]}")
+    return
+
+if __name__ == "__main__":
+    main()
+
